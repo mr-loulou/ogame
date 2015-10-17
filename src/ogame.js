@@ -13,6 +13,38 @@ $(function() {
   html['span_deuterium']  = $("#resources_deuterium");
 
 
+
+  // Resources page
+  page("resources", function(){
+    var costs = {};
+
+    $("div[class*='supply']").each(function(index, el) {
+      var el = $(this);
+      var type = parseInt($(this).attr('class').replace("supply", ""));
+      if( type === 'NaN') { return }
+
+      cost(type, function(data){
+        costs[type] = {
+          'metal': data['metal'],
+          'crystal': data['crystal'],
+          'deuterium': data['deuterium'],
+        }
+
+        var time = calculate_time(data);
+        if (time > 0) {
+          el.append( $("<div class=\"addon-countdown\"></div>").text(display_time(Math.round(time))) );
+        }
+      });
+    });
+
+  });
+
+
+  function update_time() {
+
+  }
+
+
   // Observer that executes a function when the site updates the watched element.
   var resource_watcher = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
@@ -36,11 +68,73 @@ $(function() {
   resource_watcher.observe(html['span_crystal'].get(0), config);
   resource_watcher.observe(html['span_deuterium'].get(0), config);
 
-});
 
-function get_production(resource) {
-  var raw = $("div#box script").text();
-  var re = new RegExp(resource + ".+?\"production\":([0-9\.]+)");
-  console.log(raw);
-  return raw.match(re)[1];
-}
+
+  function get_production(resource) {
+    var raw = $("div#box script").text();
+    var re = new RegExp(resource + ".+?\"production\":([0-9\.]+)");
+    return parseFloat(raw.match(re)[1]);
+  }
+
+
+  function page(key, fn) {
+    if (window.location.href.indexOf("?page=" + key) > -1) {
+      fn();
+    }
+  }
+
+  function cost(type, callback) {
+    url = "http://s117-fr.ogame.gameforge.com/game/index.php?page=station&ajax=1";
+    $.get(url, { type: type }, function(data) {
+      console.debug("Calculating cost for type: " + type);
+      // Metal
+      var metal = data.match(/<li class="metal tooltip" title="([0-9\.]+) /)
+      if(typeof metal === "undefined" || metal === null) { metal = 0 } else { metal = parseInt(metal[1].replace(".", "")) }
+
+      // Crystal
+      var crystal = data.match(/<li class="crystal tooltip" title="([0-9\.]+) /)
+      if(typeof crystal === "undefined" || crystal === null) { crystal = 0 } else { crystal = parseInt(crystal[1].replace(".", "")) }
+
+      // Deuterium
+      var deuterium = data.match(/<li class="deuterium tooltip" title="([0-9\.]+) /)
+      if(typeof deuterium === "undefined" || deuterium === null) { deuterium = 0 } else { deuterium = parseInt(deuterium[1].replace(".", "")) }
+
+      callback({'metal': metal, 'crystal': crystal, 'deuterium': deuterium });
+    });
+  }
+
+  function calculate_time(cost) {
+    var time = {};
+
+    console.log(cost);
+    console.log($("#resources_metal").text() );
+
+    time['metal'] = ( cost['metal'] - parseInt(html['span_metal'].text().replace(".", "")) ) / production['metal'];
+    time['crystal'] = ( cost['crystal'] - parseInt(html['span_crystal'].text().replace(".", "")) ) / production['crystal'];
+    time['deuterium'] = ( cost['deuterium'] - parseInt(html['span_deuterium'].text().replace(".", "")) ) / production['deuterium'];
+
+    var max_time = Math.max(Math.max(time['metal'], time['crystal']), time['deuterium']);
+
+    if (max_time <= 0)
+      return 0
+
+    return max_time
+  }
+
+  function display_time(seconds) {
+    if (seconds < 60) { return seconds + 's' }
+
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+
+    if (minutes < 60) { return minutes + 'm ' + seconds + 's' }
+
+    var hours = Math.floor(minutes / 60);
+    minutes = minutes % 60;
+
+    if (hours < 24) { return hours + 'h ' + minutes + 'm ' + seconds + 's' }
+
+    return time
+  }
+
+});

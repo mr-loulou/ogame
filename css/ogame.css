@@ -1,3 +1,13 @@
 .addon-green {
   color: #99CC00;
 }
+
+.addon-countdown {
+  position: absolute;
+  top: 45%;
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  background-color: rgba(0,0,0, 0.7);
+}
