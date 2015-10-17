@@ -1,0 +1,26 @@
+{
+  "name": "Ogame+",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "Ogame extension for Google Chrome",
+  "homepage_url": "http://www.example.com",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "page_action": {
+    "default_icon": "icons/icon128.png"
+  },
+  "permissions": [
+    "notifications",
+    "*://*.ogame.gameforge.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.ogame.gameforge.com/*"],
+      "js": ["js/jquery/jquery.min.js", "src/ogame.js"],
+      "css": ["css/ogame.css"]
+    }
+  ]
+}
