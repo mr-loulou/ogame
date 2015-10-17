@@ -15,30 +15,9 @@ $(function() {
 
 
   // Resources page
-  page("resources", function(){
-    var costs = {};
-
-    $("div[class*='supply']").each(function(index, el) {
-      var el = $(this);
-      var type = parseInt($(this).attr('class').replace("supply", ""));
-      if( type === 'NaN') { return }
-
-      cost(type, function(data){
-        costs[type] = {
-          'metal': data['metal'],
-          'crystal': data['crystal'],
-          'deuterium': data['deuterium'],
-        }
-
-        var time = calculate_time(data);
-        if (time > 0) {
-          el.append( $("<div class=\"addon-countdown\"></div>").text(display_time(Math.round(time))) );
-        }
-      });
-    });
-
-  });
-
+  page("resources", function(){ display_time_to_build("supply"); });
+  page("station", function(){ display_time_to_build("station"); });
+  page("research", function(){ display_time_to_build("research"); });
 
   function update_time() {
 
@@ -83,6 +62,36 @@ $(function() {
     }
   }
 
+  function display_time_to_build(class_pattern) {
+    var costs = {};
+
+    $("li[class='disabled'] div[class*='"+ class_pattern +"']").each(function(index, el) {
+      var el = $(this);
+
+      console.debug(class_pattern);
+      console.debug($(this).attr('class'));
+
+      var type = parseInt(
+          $(this).attr('class')
+            .match(new RegExp(class_pattern + "([0-9]+)"))[1]
+      );
+      if( type === NaN) { return }
+
+      cost(type, function(data){
+        costs[type] = {
+          'metal': data['metal'],
+          'crystal': data['crystal'],
+          'deuterium': data['deuterium'],
+        }
+
+        var time = calculate_time(data);
+        if (time > 0) {
+          el.append( $("<div class=\"addon-countdown\"></div>").text(display_time(Math.round(time))) );
+        }
+      });
+    });
+  }
+
   function cost(type, callback) {
     url = "http://s117-fr.ogame.gameforge.com/game/index.php?page=station&ajax=1";
     $.get(url, { type: type }, function(data) {
@@ -105,9 +114,6 @@ $(function() {
 
   function calculate_time(cost) {
     var time = {};
-
-    console.log(cost);
-    console.log($("#resources_metal").text() );
 
     time['metal'] = ( cost['metal'] - parseInt(html['span_metal'].text().replace(".", "")) ) / production['metal'];
     time['crystal'] = ( cost['crystal'] - parseInt(html['span_crystal'].text().replace(".", "")) ) / production['crystal'];
@@ -134,7 +140,10 @@ $(function() {
 
     if (hours < 24) { return hours + 'h ' + minutes + 'm ' + seconds + 's' }
 
-    return time
+    var days = Math.floor(hours / 24);
+    hours = hours % 24;
+
+    return days + 'd ' + hours + 'h ' + minutes + 'm'
   }
 
 });
